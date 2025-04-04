@@ -1,0 +1,16 @@
+name: sam2
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.10.12
+  - pytorch-cuda=12.1
+  - cuda-toolkit=12.1
+  - cuda=12.1
+  - cuda-tools=12.1
+  - cuda-version=12.1
+  - cuda-command-line-tools=12.1
+  - cuda-compiler=12.1
+  - cuda-runtime=12.1
+  - cudnn=9.1

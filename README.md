@@ -28,6 +28,17 @@ p.s. it is possible to get feed from usb camera in WSL, but the frame rate is mu
 
 ![SA-V dataset](assets/sa_v_dataset.jpg?raw=true)
 
+
+## Quick start
+
+```bash
+make conda_env
+```
+
+```bash
+make install
+```
+
 ## Installation
 
 SAM 2 needs to be installed first before use. The code requires `python>=3.10`, as well as `torch>=2.3.1` and `torchvision>=0.18.1`. Please follow the instructions [here](https://pytorch.org/get-started/locally/) to install both PyTorch and TorchVision dependencies. You can install SAM 2 on a GPU machine using:

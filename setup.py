@@ -22,16 +22,23 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 # Required dependencies
 REQUIRED_PACKAGES = [
-    "torch>=2.3.1",
-    "torchvision>=0.18.1",
-    "numpy>=1.24.4",
-    "tqdm>=4.66.1",
+    "torch>=2.5.1",
+    "torchvision>=0.20.1",
+    "numpy>=1.26.4",
+    "tqdm>=4.67.1",
     "hydra-core>=1.3.2",
     "iopath>=0.1.10",
-    "pillow>=9.4.0",
+    "pillow>=11.1.0",
+    "huggingface-hub>=0.29.3",
+    "safetensors>=0.5.3",
+    "requests>=2.32.3"
 ]
 
 EXTRA_PACKAGES = {
+    "realtime": [
+        "matplotlib>=3.9.2",
+        "opencv-python>=4.10.0.84",
+    ],
     "notebooks": [
         "matplotlib>=3.9.1",
         "jupyter>=1.0.0",
