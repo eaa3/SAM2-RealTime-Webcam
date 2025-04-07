@@ -31,12 +31,20 @@ p.s. it is possible to get feed from usb camera in WSL, but the frame rate is mu
 
 ## Quick start
 
+### Make conda environment
 ```bash
 make conda_env
 ```
 
+### Install package
 ```bash
 make install
+```
+
+### Run demo (requires webcam)
+
+```bash
+python demo/webcam_demo.py
 ```
 
 ## Installation
