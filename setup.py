@@ -22,8 +22,8 @@ with open("README.md", "r", encoding="utf-8") as f:
 
 # Required dependencies
 REQUIRED_PACKAGES = [
-    "torch>=2.5.1",
-    "torchvision>=0.20.1",
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
     "numpy>=1.26.4",
     "tqdm>=4.67.1",
     "hydra-core>=1.3.2",
@@ -159,6 +159,14 @@ except Exception as e:
     else:
         raise e
 
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join('..', path, filename))
+    return paths
+
+extra_files = package_files('sam2/configs')
 
 # Setup configuration
 setup(
@@ -172,7 +180,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     license=LICENSE,
     packages=find_packages(exclude="notebooks"),
-    package_data={"": ["*.yaml"]},  # SAM 2 configuration files
+    package_data={"": extra_files},  # SAM 2 configuration files
     include_package_data=True,
     install_requires=REQUIRED_PACKAGES,
     extras_require=EXTRA_PACKAGES,
