@@ -192,6 +192,7 @@ class SAM2CameraPredictor(SAM2Base):
         bbox=None,
         clear_old_points=True,
         normalize_coords=True,
+        mask=None
     ):
         """Add new points to a frame."""
         obj_idx = self._obj_id_to_idx(obj_id)
@@ -199,40 +200,54 @@ class SAM2CameraPredictor(SAM2Base):
         mask_inputs_per_frame = self.condition_state["mask_inputs_per_obj"][obj_idx]
 
         assert (
-            bbox is not None or points is not None
+            bbox is not None or points is not None or mask is not None
         ), "Either bbox or points is required"
 
-        if bbox is not None:
-            if not isinstance(bbox, torch.Tensor):
-                points = torch.tensor(bbox, dtype=torch.float32)
-            labels = torch.tensor([2, 3], dtype=torch.int32)
-        else:
-            if not isinstance(points, torch.Tensor):
-                points = torch.tensor(points, dtype=torch.float32)
-            if not isinstance(labels, torch.Tensor):
-                labels = torch.tensor(labels, dtype=torch.int32)
-        if points.dim() == 2:
-            points = points.unsqueeze(0)  # add batch dimension
-        if labels.dim() == 1:
-            labels = labels.unsqueeze(0)  # add batch dimension
+        if mask is None:
+            if bbox is not None:
+                if not isinstance(bbox, torch.Tensor):
+                    points = torch.tensor(bbox, dtype=torch.float32)
+                labels = torch.tensor([2, 3], dtype=torch.int32)
+            elif points is not None:
+                if not isinstance(points, torch.Tensor):
+                    points = torch.tensor(points, dtype=torch.float32)
+                if not isinstance(labels, torch.Tensor):
+                    labels = torch.tensor(labels, dtype=torch.int32)
+            if points.dim() == 2:
+                points = points.unsqueeze(0)  # add batch dimension
+            if labels.dim() == 1:
+                labels = labels.unsqueeze(0)  # add batch dimension
 
-        if normalize_coords:
-            video_H = self.condition_state["video_height"]
-            video_W = self.condition_state["video_width"]
-            points = points / torch.tensor([video_W, video_H]).to(points.device)
-        # scale the (normalized) coordinates by the model's internal image size
-        points = points * self.image_size
-        points = points.to(self.condition_state["device"])
-        labels = labels.to(self.condition_state["device"])
+            if normalize_coords:
+                video_H = self.condition_state["video_height"]
+                video_W = self.condition_state["video_width"]
+                points = points / torch.tensor([video_W, video_H]).to(points.device)
+            # scale the (normalized) coordinates by the model's internal image size
+            points = points * self.image_size
+            points = points.to(self.condition_state["device"])
+            labels = labels.to(self.condition_state["device"])
 
-        if not clear_old_points:
-            point_inputs = point_inputs_per_frame.get(frame_idx, None)
+            if not clear_old_points:
+                point_inputs = point_inputs_per_frame.get(frame_idx, None)
+            else:
+                point_inputs = None
+            point_inputs = concat_points(point_inputs, points, labels)
+
+            point_inputs_per_frame[frame_idx] = point_inputs
+            mask_inputs_per_frame.pop(frame_idx, None)
+            mask_input = None
         else:
+            point_inputs_per_frame.pop(frame_idx, None)
             point_inputs = None
-        point_inputs = concat_points(point_inputs, points, labels)
-
-        point_inputs_per_frame[frame_idx] = point_inputs
-        mask_inputs_per_frame.pop(frame_idx, None)
+            if not isinstance(mask, torch.Tensor):
+                mask_input = torch.tensor(mask)
+            else:
+                mask_input = mask
+            if mask_input.dim() == 2:
+                mask_input = mask_input.unsqueeze(0).unsqueeze(0)  # add batch dimension
+            mask_input = mask_input.to(self.condition_state["device"])
+            mask_inputs_per_frame[frame_idx] = mask_input.to(self.condition_state["device"])
+        
         # If this frame hasn't been tracked before, we treat it as an initial conditioning
         # frame, meaning that the inputs points are to generate segments on this frame without
         # using any memory from other frames, like in SAM. Otherwise (if it has been tracked),
@@ -275,7 +290,7 @@ class SAM2CameraPredictor(SAM2Base):
             batch_size=1,  # run on the slice of a single object
             is_init_cond_frame=is_init_cond_frame,
             point_inputs=point_inputs,
-            mask_inputs=None,
+            mask_inputs=mask_input,
             reverse=reverse,
             # Skip the memory encoder when adding clicks or mask. We execute the memory encoder
             # at the beginning of `propagate_in_video` (after user finalize their clicks). This
